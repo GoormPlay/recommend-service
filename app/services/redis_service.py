@@ -64,7 +64,6 @@ class RedisService:
             logger.error(f"Redis 조회 오류 (user_id: {user_id}): {e}")
             return None
 
-
     def set_user_recommendations(self, user_id: str, movies: List[str], expire_seconds: int = 3600) -> bool:
         """
         사용자별 추천 영화 목록을 Redis에 저장합니다.
@@ -110,25 +109,14 @@ class RedisService:
         try:
             key = f"user_recommendations:{user_id}"
             result = self.redis_client.delete(key)
-            logger.info(f"사용자 {user_id}의 추천 데이터 삭제 완료")
-            return bool(result)
+            
+            if result:
+                logger.info(f"사용자 {user_id}의 추천 데이터 삭제 완료")
+                return True
+            else:
+                logger.info(f"사용자 {user_id}의 추천 데이터가 존재하지 않습니다")
+                return False
+                
         except Exception as e:
             logger.error(f"Redis 삭제 오류 (user_id: {user_id}): {e}")
             return False
-
-    def get_all_users_with_recommendations(self) -> List[str]:
-        """
-        추천 데이터가 있는 모든 사용자 ID를 조회합니다.
-        
-        Returns:
-            사용자 ID 리스트
-        """
-        try:
-            pattern = "user_recommendations:*"
-            keys = self.redis_client.keys(pattern)
-            user_ids = [key.replace("user_recommendations:", "") for key in keys]
-            logger.info(f"추천 데이터가 있는 사용자 {len(user_ids)}명 조회")
-            return user_ids
-        except Exception as e:
-            logger.error(f"사용자 목록 조회 오류: {e}")
-            return []
